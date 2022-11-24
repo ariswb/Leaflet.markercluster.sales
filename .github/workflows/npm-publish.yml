@@ -1,31 +1,26 @@
-name: Deploy package to GitHub package registry
+name: Publish
 on:
-  pull_request:
-    branches:
-      - master
-  push:
-    branches:
-      - master
+  release:
+    types:
+      - created
 jobs:
-  build:
+  main:
     runs-on: ubuntu-latest
     steps:
-      - name: "Setup actions"
-        uses: actions/checkout@v1
-      - name: "npm/registry setup"
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
         with:
-          node-version: 12
-          registry-url: https://npm.pkg.github.com/
-          scope: "@ariswb"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.ARIS_SECRET }}
-      - name: "publish package"
-        uses: actions/bin/debug@master
+          node-version: 13.x
+          registry-url: https://npm.pkg.github.com
+          scope: '@ariswb'
+      - name: npm publish
         run: |
-          npm run test 
-          npm run build
-          echo @OWNER:registry=https://npm.pkg.github.com/ >> .npmrc
-          npm publish
+          LATEST=`npm view . version`
+          CURRENT=`cat package.json | jq -r .version`
+          if [ "$LATEST" != "$CURRENT" ]
+          then
+            npm ci
+            npm publish
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ARIS_SECRET }}
